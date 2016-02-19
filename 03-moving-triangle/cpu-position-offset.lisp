@@ -9,10 +9,9 @@
 ;;Data:--------------------------------------------------------------------------
 
 
-(defparameter *vertex-positions-contents* '(+0.75 +0.75 0.0 1.0
-                                            +0.75 -0.75 0.0 1.0
-                                            -0.75 -0.75 0.0 1.0))
-
+(defparameter *vertex-positions-contents* '(+0.25 +0.25 0.0 1.0
+                                            +0.25 -0.25 0.0 1.0
+                                            -0.25 -0.25 0.0 1.0))
 
 (defun make-c-vertices (vertices)
   (cffi:foreign-alloc
