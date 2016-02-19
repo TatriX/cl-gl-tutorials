@@ -1,4 +1,4 @@
-(in-package :gl-tutorial.3.vertex-calc-offset)
+(in-package :gl-tutorial.3.fragment-change-color)
 
 (defclass main-window (gl-window)
   ((start-time :initform (get-internal-real-time))
@@ -35,9 +35,9 @@
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
     (shader standard-v :vertex-shader (:file "calc-offset.vert"))
-    (shader standard-f :fragment-shader (:file "standard.frag"))
+    (shader standard-f :fragment-shader (:file "calc-color.frag"))
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
-    (program :program (:loop-duration :time) ;<- UNIFORMS!
+    (program :program (:loop-duration :frag-loop-duration :time) ;<- UNIFORMS!
              (:vertex-shader standard-v)
              (:fragment-shader standard-f)))
   ;; function may only run when a gl-context exists, as its documentation
@@ -50,6 +50,7 @@
   (setf *programs-dict* (load-shaders))
   (use-program *programs-dict* :program)
   (uniform :float :loop-duration 5)
+  (uniform :float :frag-loop-duration 10)
   (gl:use-program 0))
 
 ;; to be understood while reading the LOAD-SHADER function

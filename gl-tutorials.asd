@@ -14,4 +14,5 @@
    (:file "02-colors/colors")
    (:file "03-moving-triangle/cpu-position-offset")
    (:file "03-moving-triangle/vertex-position-offset")
-   (:file "03-moving-triangle/vertex-calc-offset")))
+   (:file "03-moving-triangle/vertex-calc-offset")
+   (:file "03-moving-triangle/fragment-change-color")))

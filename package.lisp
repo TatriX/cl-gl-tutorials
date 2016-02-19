@@ -23,3 +23,7 @@
 (defpackage+ :gl-tutorial.3.vertex-calc-offset
   (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math)
   (:export :main))
+
+(defpackage+ :gl-tutorial.3.fragment-change-color
+  (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math)
+  (:export :main))
