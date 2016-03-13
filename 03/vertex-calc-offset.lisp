@@ -31,7 +31,7 @@
 (defun load-shaders ()
   (defdict shaders (:shader-path
                     (merge-pathnames
-                     #p "03-moving-triangle/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
+                     #p "03/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
     (shader standard-v :vertex-shader (:file "calc-offset.vert"))

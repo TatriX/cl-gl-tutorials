@@ -1,6 +1,6 @@
-(in-package :gl-tutorial.3.fragment-change-color)
+(in-package :gl-tutorial.3.cpu-position-offset)
 
-(defclass main-window (gl-window)
+(defclass colors-window (gl-window)
   ((start-time :initform (get-internal-real-time))
    (one-frame-time :initform (get-internal-real-time))
    (frames :initform 0)))
@@ -30,13 +30,13 @@
 (defun load-shaders ()
   (defdict shaders (:shader-path
                     (merge-pathnames
-                     #p "03-moving-triangle/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
+                     #p "03/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
-    (shader standard-v :vertex-shader (:file "calc-offset.vert"))
-    (shader standard-f :fragment-shader (:file "calc-color.frag"))
+    (shader standard-v :vertex-shader (:file "standard.vert"))
+    (shader standard-f :fragment-shader (:file "standard.frag"))
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
-    (program :program (:loop-duration :frag-loop-duration :time) ;<- UNIFORMS!
+    (program :colors () ;<- UNIFORMS!
              (:vertex-shader standard-v)
              (:fragment-shader standard-f)))
   ;; function may only run when a gl-context exists, as its documentation
@@ -46,11 +46,7 @@
 (defvar *programs-dict*)
 
 (defun initialize-program ()
-  (setf *programs-dict* (load-shaders))
-  (use-program *programs-dict* :program)
-  (uniform :float :loop-duration 5)
-  (uniform :float :frag-loop-duration 10)
-  (gl:use-program 0))
+  (setf *programs-dict* (load-shaders)))
 
 ;; to be understood while reading the LOAD-SHADER function
 ;; example: (uniform :vec :<name-of-uniform> <new-value>)
@@ -58,8 +54,8 @@
   (:method ((type (eql :vec)) key value)
     (uniformfv *programs-dict* key value))
 
-  (:method ((type (eql :float)) key value)
-    (uniformf *programs-dict* key value))
+  (:method ((type (eql :vec)) key value)
+    (uniformfv *programs-dict* key value))
 
   (:method ((type (eql :mat)) key value)
     ;; nice, transpose is NIL by default!
@@ -75,6 +71,14 @@
   (gl:bind-buffer :array-buffer *position-buffer-object*)
   (%gl:buffer-data :array-buffer (num-of-vertices) *vertex-positions* :stream-draw)
   (gl:bind-buffer :array-buffer 0))
+
+(defun compute-offset ()
+  (let* ((loop-duration 5)
+         (scale (/ (* 2 pi)
+                   loop-duration))
+         (curr-time-through-loop (rem (time-since-start) loop-duration)))
+    (values (coerce (* (cos (* curr-time-through-loop scale)) 0.5) 'single-float)
+            (coerce (* (sin (* curr-time-through-loop scale)) 0.5) 'single-float))))
 
 ;;utils-------------------------------------------------------------------------
 
@@ -102,7 +106,12 @@
 
 (defvar *vao* 0)
 
-(defmethod initialize-instance :after ((w main-window) &key &allow-other-keys)
+(defmethod initialize-instance :after ((w colors-window) &key &allow-other-keys)
+  ;; GL setup can go here; your GL context is automatically active,
+  ;; and this is done in the main thread.
+
+  ;; if you (setf (idle-render window) t) it'll call RENDER as fast as
+  ;; possible when not processing other events - suitable for games
   (setf (idle-render w) t)
   (gl:clear-color 0 0 1 1)
   (gl:clear :color-buffer-bit)
@@ -121,13 +130,14 @@
 
 ;;Rendering----------------------------------------------------------------------
 
-(defmethod render ((window main-window))
+(defmethod render ((window colors-window))
+  (multiple-value-bind (x-offset y-offset) (compute-offset)
+    (adjust-vertex-data x-offset y-offset))
+
   (gl:clear-color 0 0 0 0)
   (gl:clear :color-buffer-bit)
 
-  (use-program *programs-dict* :program)
-
-  (uniform :float :time (time-since-start))
+  (use-program *programs-dict* :colors)
 
   (gl:bind-buffer :array-buffer *position-buffer-object*)
   (gl:enable-vertex-attrib-array 0)
@@ -143,17 +153,17 @@
 
 ;;Events------------------------------------------------------------------------
 
-(defmethod close-window ((window main-window))
+(defmethod close-window ((window colors-window))
   (format t "Bye!~%")
   (call-next-method))
 
-(defmethod keyboard-event ((window main-window) state ts repeat-p keysym)
+(defmethod keyboard-event ((window colors-window) state ts repeat-p keysym)
   (let ((scancode (sdl2:scancode keysym)))
     (case scancode
       (:scancode-escape (close-window window))
       (:scancode-q (close-window window)))))
 
-(defmethod mousebutton-event ((window main-window) state ts b x y)
+(defmethod mousebutton-event ((window colors-window) state ts b x y)
   (format t "~A button: ~A at ~A, ~A~%" state b x y))
 
 
@@ -167,4 +177,4 @@
 (defun main ()
   (sdl2.kit:start)
   (setf *start-time* (get-internal-real-time))
-  (setf *window* (make-instance 'main-window)))
+  (setf *window* (make-instance 'colors-window)))

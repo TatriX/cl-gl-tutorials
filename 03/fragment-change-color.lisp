@@ -1,34 +1,6 @@
-(in-package :gl-tutorial.hello)
+(in-package :gl-tutorial.3.fragment-change-color)
 
-;;; This requires your graphics card to support GL 3.3 / GLSL 3.30!
-
-;;; Renders a rotating cube to the screen which can be moved with the mouse by holding
-;;; down the left mouse button. Also you may zoom in and out with the mousewheel.
-
-
-;;; HOW TO USE:
-;;;
-;;; First, run this. It is SAFE to run repeatedly:
-;;;
-;;; (sdl2.kit:start)
-;;;
-;;; Then, make a window.
-;;;
-;;;   (make-instance 'sdl2.kit.test:cube-window)
-;;;
-;;; After you close a window, it will be collected at some point.
-
-;;; You should NOT call any protocol functions on a window, except the
-;;; following:
-;;;
-;;;   (render WINDOW)
-;;;   (close-window WINDOW)
-;;;
-;;; These are the only functions guaranteed to be "safe" (including
-;;; threadsafety and other expectations).
-
-
-(defclass hello-window (gl-window)
+(defclass main-window (gl-window)
   ((start-time :initform (get-internal-real-time))
    (one-frame-time :initform (get-internal-real-time))
    (frames :initform 0)))
@@ -37,15 +9,17 @@
 ;;Data:--------------------------------------------------------------------------
 
 
-(defparameter *vertex-positions-contents* '(+0.75 +0.75 0.0 1.0
-                                            +0.75 -0.75 0.0 1.0
-                                            -0.75 -0.75 0.0 1.0))
+(defparameter *vertex-positions-contents* '(+0.25 +0.25 0.0 1.0
+                                            +0.25 -0.25 0.0 1.0
+                                            -0.25 -0.25 0.0 1.0))
 
-(defparameter *vertex-positions*
+(defun make-c-vertices (vertices)
   (cffi:foreign-alloc
    :float
    :initial-contents
-   *vertex-positions-contents*))
+   vertices))
+
+(defparameter *vertex-positions* (make-c-vertices *vertex-positions-contents*))
 
 ;;Shader------------------------------------------------------------------------
 
@@ -56,15 +30,15 @@
 (defun load-shaders ()
   (defdict shaders (:shader-path
                     (merge-pathnames
-                     #p "01-hello/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
+                     #p "03/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
-    (shader hello-v :vertex-shader (:file "hello.vert"))
-    (shader hello-f :fragment-shader (:file "hello.frag"))
+    (shader standard-v :vertex-shader (:file "calc-offset.vert"))
+    (shader standard-f :fragment-shader (:file "calc-color.frag"))
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
-    (program :hello () ;<- UNIFORMS!
-             (:vertex-shader hello-v)
-             (:fragment-shader hello-f)))
+    (program :program (:loop-duration :frag-loop-duration :time) ;<- UNIFORMS!
+             (:vertex-shader standard-v)
+             (:fragment-shader standard-f)))
   ;; function may only run when a gl-context exists, as its documentation
   ;; mentions
   (compile-shader-dictionary 'shaders))
@@ -72,7 +46,11 @@
 (defvar *programs-dict*)
 
 (defun initialize-program ()
-  (setf *programs-dict* (load-shaders)))
+  (setf *programs-dict* (load-shaders))
+  (use-program *programs-dict* :program)
+  (uniform :float :loop-duration 5)
+  (uniform :float :frag-loop-duration 10)
+  (gl:use-program 0))
 
 ;; to be understood while reading the LOAD-SHADER function
 ;; example: (uniform :vec :<name-of-uniform> <new-value>)
@@ -80,8 +58,8 @@
   (:method ((type (eql :vec)) key value)
     (uniformfv *programs-dict* key value))
 
-  (:method ((type (eql :vec)) key value)
-    (uniformfv *programs-dict* key value))
+  (:method ((type (eql :float)) key value)
+    (uniformf *programs-dict* key value))
 
   (:method ((type (eql :mat)) key value)
     ;; nice, transpose is NIL by default!
@@ -89,10 +67,13 @@
 
 (defvar *position-buffer-object*)
 
+(defun num-of-vertices ()
+  (* 4 (length *vertex-positions-contents*)))
+
 (defun initialize-vertex-buffer ()
   (setf *position-buffer-object* (gl:gen-buffer))
   (gl:bind-buffer :array-buffer *position-buffer-object*)
-  (%gl:buffer-data :array-buffer (* 4 (length *vertex-positions-contents*)) *vertex-positions* :static-draw)
+  (%gl:buffer-data :array-buffer (num-of-vertices) *vertex-positions* :stream-draw)
   (gl:bind-buffer :array-buffer 0))
 
 ;;utils-------------------------------------------------------------------------
@@ -121,12 +102,7 @@
 
 (defvar *vao* 0)
 
-(defmethod initialize-instance :after ((w hello-window) &key &allow-other-keys)
-  ;; GL setup can go here; your GL context is automatically active,
-  ;; and this is done in the main thread.
-
-  ;; if you (setf (idle-render window) t) it'll call RENDER as fast as
-  ;; possible when not processing other events - suitable for games
+(defmethod initialize-instance :after ((w main-window) &key &allow-other-keys)
   (setf (idle-render w) t)
   (gl:clear-color 0 0 1 1)
   (gl:clear :color-buffer-bit)
@@ -145,14 +121,13 @@
 
 ;;Rendering----------------------------------------------------------------------
 
-(defmethod render ((window hello-window))
-  ;; Your GL context is automatically active.  FLUSH and
-  ;; SDL2:GL-SWAP-WINDOW are done implicitly by GL-WINDOW  (!!)
-  ;; after RENDER.
+(defmethod render ((window main-window))
   (gl:clear-color 0 0 0 0)
   (gl:clear :color-buffer-bit)
 
-  (use-program *programs-dict* :hello)
+  (use-program *programs-dict* :program)
+
+  (uniform :float :time (time-since-start))
 
   (gl:bind-buffer :array-buffer *position-buffer-object*)
   (gl:enable-vertex-attrib-array 0)
@@ -168,25 +143,28 @@
 
 ;;Events------------------------------------------------------------------------
 
-(defmethod close-window ((window hello-window))
+(defmethod close-window ((window main-window))
   (format t "Bye!~%")
-  ;; To _actually_ destroy the GL context and close the window,
-  ;; CALL-NEXT-METHOD.  You _may_ not want to do this, if you wish to
-  ;; prompt the user!
   (call-next-method))
 
-(defmethod keyboard-event ((window hello-window) state ts repeat-p keysym)
+(defmethod keyboard-event ((window main-window) state ts repeat-p keysym)
   (let ((scancode (sdl2:scancode keysym)))
     (case scancode
       (:scancode-escape (close-window window))
       (:scancode-q (close-window window)))))
 
-(defmethod mousebutton-event ((window hello-window) state ts b x y)
+(defmethod mousebutton-event ((window main-window) state ts b x y)
   (format t "~A button: ~A at ~A, ~A~%" state b x y))
 
 
 (defparameter *window* nil)
 
+(defparameter *start-time* 0)
+
+(defun time-since-start ()
+  (/ (- (get-internal-real-time) *start-time*) internal-time-units-per-second))
+
 (defun main ()
   (sdl2.kit:start)
-  (setf *window* (make-instance 'hello-window)))
+  (setf *start-time* (get-internal-real-time))
+  (setf *window* (make-instance 'main-window)))

@@ -1,6 +1,6 @@
-(in-package :gl-tutorial.colors)
+(in-package :gl-tutorial.4.orhto-cube)
 
-(defclass colors-window (gl-window)
+(defclass main-window (gl-window)
   ((start-time :initform (get-internal-real-time))
    (one-frame-time :initform (get-internal-real-time))
    (frames :initform 0)))
@@ -9,15 +9,114 @@
 ;;Data:--------------------------------------------------------------------------
 
 
-(defparameter *vertex-positions-contents* '(+0.75 +0.75 0.0 1.0
-                                            +0.75 -0.75 0.0 1.0
-                                            -0.75 -0.75 0.0 1.0))
+(defparameter *vertex-positions-contents*
+  '(+0.25 +0.25 +0.75 1.0
+    +0.25 -0.25 +0.75 1.0
+    -0.25 +0.25 +0.75 1.0
 
-(defparameter *vertex-positions*
+    +0.25 -0.25 +0.75 1.0
+    -0.25 -0.25 +0.75 1.0
+    -0.25 +0.25 +0.75 1.0
+
+    +0.25 +0.25 -0.75 1.0
+    -0.25 +0.25 -0.75 1.0
+    +0.25 -0.25 -0.75 1.0
+
+    +0.25 -0.25 -0.75 1.0
+    -0.25 +0.25 -0.75 1.0
+    -0.25 -0.25 -0.75 1.0
+
+    -0.25 +0.25 +0.75 1.0
+    -0.25 -0.25 +0.75 1.0
+    -0.25 -0.25 -0.75 1.0
+
+    -0.25 +0.25 +0.75 1.0
+    -0.25 -0.25 -0.75 1.0
+    -0.25 +0.25 -0.75 1.0
+
+    +0.25 +0.25 +0.75 1.0
+    +0.25 -0.25 -0.75 1.0
+    +0.25 -0.25 +0.75 1.0
+
+    +0.25 +0.25 +0.75 1.0
+    +0.25 +0.25 -0.75 1.0
+    +0.25 -0.25 -0.75 1.0
+
+    +0.25 +0.25 -0.75 1.0
+    +0.25 +0.25 +0.75 1.0
+    -0.25 +0.25 +0.75 1.0
+
+    +0.25 +0.25 -0.75 1.0
+    -0.25 +0.25 +0.75 1.0
+    -0.25 +0.25 -0.75 1.0
+
+    +0.25 -0.25 -0.75 1.0
+    -0.25 -0.25 +0.75 1.0
+    +0.25 -0.25 +0.75 1.0
+
+    +0.25 -0.25 -0.75 1.0
+    -0.25 -0.25 -0.75 1.0
+    -0.25 -0.25 +0.75 1.0
+
+
+
+
+    +0.0 +0.0 1.0 1.0
+    +0.0 +0.0 1.0 1.0
+    +0.0 +0.0 1.0 1.0
+
+    +0.0 +0.0 1.0 1.0
+    +0.0 +0.0 1.0 1.0
+    +0.0 +0.0 1.0 1.0
+
+    +0.8 +0.8 +0.8 1.0
+    +0.8 +0.8 +0.8 1.0
+    +0.8 +0.8 +0.8 1.0
+
+    +0.8 +0.8 +0.8 1.0
+    +0.8 +0.8 +0.8 1.0
+    +0.8 +0.8 +0.8 1.0
+
+    +0.0 1.0 +0.0 1.0
+    +0.0 1.0 +0.0 1.0
+    +0.0 1.0 +0.0 1.0
+
+    +0.0 1.0 +0.0 1.0
+    +0.0 1.0 +0.0 1.0
+    +0.0 1.0 +0.0 1.0
+
+    +0.5 +0.5 +0.0 1.0
+    +0.5 +0.5 +0.0 1.0
+    +0.5 +0.5 +0.0 1.0
+
+    +0.5 +0.5 +0.0 1.0
+    +0.5 +0.5 +0.0 1.0
+    +0.5 +0.5 +0.0 1.0
+
+    1.0 +0.0 +0.0 1.0
+    1.0 +0.0 +0.0 1.0
+    1.0 +0.0 +0.0 1.0
+
+    1.0 +0.0 +0.0 1.0
+    1.0 +0.0 +0.0 1.0
+    1.0 +0.0 +0.0 1.0
+
+    +0.0 1.0 1.0 1.0
+    +0.0 1.0 1.0 1.0
+    +0.0 1.0 1.0 1.0
+
+    +0.0 1.0 1.0 1.0
+    +0.0 1.0 1.0 1.0
+    +0.0 1.0 1.0 1.0))
+
+
+(defun make-c-vertices (vertices)
   (cffi:foreign-alloc
    :float
    :initial-contents
-   *vertex-positions-contents*))
+   vertices))
+
+(defparameter *vertex-positions* (make-c-vertices *vertex-positions-contents*))
 
 ;;Shader------------------------------------------------------------------------
 
@@ -28,15 +127,15 @@
 (defun load-shaders ()
   (defdict shaders (:shader-path
                     (merge-pathnames
-                     #p "02-colors/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
+                     #p "04/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
-    (shader colors-v :vertex-shader (:file "colors.vert"))
-    (shader colors-f :fragment-shader (:file "colors.frag"))
+    (shader standard-v :vertex-shader (:file "ortho-offset.vert"))
+    (shader standard-f :fragment-shader (:file "standard.frag"))
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
-    (program :colors () ;<- UNIFORMS!
-             (:vertex-shader colors-v)
-             (:fragment-shader colors-f)))
+    (program :program (:offset) ;<- UNIFORMS!
+             (:vertex-shader standard-v)
+             (:fragment-shader standard-f)))
   ;; function may only run when a gl-context exists, as its documentation
   ;; mentions
   (compile-shader-dictionary 'shaders))
@@ -52,8 +151,8 @@
   (:method ((type (eql :vec)) key value)
     (uniformfv *programs-dict* key value))
 
-  (:method ((type (eql :vec)) key value)
-    (uniformfv *programs-dict* key value))
+  (:method ((type (eql :float)) key value)
+    (uniformf *programs-dict* key value))
 
   (:method ((type (eql :mat)) key value)
     ;; nice, transpose is NIL by default!
@@ -61,10 +160,13 @@
 
 (defvar *position-buffer-object*)
 
+(defun num-of-vertices ()
+  (/ (length *vertex-positions-contents*) 2))
+
 (defun initialize-vertex-buffer ()
   (setf *position-buffer-object* (gl:gen-buffer))
   (gl:bind-buffer :array-buffer *position-buffer-object*)
-  (%gl:buffer-data :array-buffer (* 4 (length *vertex-positions-contents*)) *vertex-positions* :static-draw)
+  (%gl:buffer-data :array-buffer (* 4 2 (num-of-vertices)) *vertex-positions* :stream-draw)
   (gl:bind-buffer :array-buffer 0))
 
 ;;utils-------------------------------------------------------------------------
@@ -93,22 +195,16 @@
 
 (defvar *vao* 0)
 
-(defmethod initialize-instance :after ((w colors-window) &key &allow-other-keys)
-  ;; GL setup can go here; your GL context is automatically active,
-  ;; and this is done in the main thread.
-
-  ;; if you (setf (idle-render window) t) it'll call RENDER as fast as
-  ;; possible when not processing other events - suitable for games
+(defmethod initialize-instance :after ((w main-window) &key &allow-other-keys)
   (setf (idle-render w) t)
   (gl:clear-color 0 0 1 1)
   (gl:clear :color-buffer-bit)
 
   (gl:viewport 0 0 800 600)
 
-  ;; with culling
-  ;; (gl:enable :cull-face)
-  ;; (gl:cull-face :back)
-  ;; (gl:front-face :cw)
+  (gl:enable :cull-face)
+  (gl:cull-face :back)
+  (gl:front-face :cw)
 
   (initialize-program)
   (initialize-vertex-buffer)
@@ -117,20 +213,22 @@
 
 ;;Rendering----------------------------------------------------------------------
 
-(defmethod render ((window colors-window))
-  ;; Your GL context is automatically active.  FLUSH and
-  ;; SDL2:GL-SWAP-WINDOW are done implicitly by GL-WINDOW  (!!)
-  ;; after RENDER.
+(defmethod render ((window main-window))
   (gl:clear-color 0 0 0 0)
   (gl:clear :color-buffer-bit)
 
-  (use-program *programs-dict* :colors)
+  (use-program *programs-dict* :program)
+
+  (uniform :vec :offset (vec2 0.5 0.5))
+
 
   (gl:bind-buffer :array-buffer *position-buffer-object*)
   (gl:enable-vertex-attrib-array 0)
+  (gl:enable-vertex-attrib-array 1)
   (gl:vertex-attrib-pointer 0 4 :float :false 0 0)
+  (gl:vertex-attrib-pointer 1 4 :float :false 0 (* 4 (num-of-vertices)))
 
-  (gl:draw-arrays :triangles 0 (/ (length *vertex-positions-contents*) 4))
+  (gl:draw-arrays :triangles 0 (num-of-vertices))
 
   (gl:disable-vertex-attrib-array 0)
   (gl:use-program 0)
@@ -140,22 +238,28 @@
 
 ;;Events------------------------------------------------------------------------
 
-(defmethod close-window ((window colors-window))
+(defmethod close-window ((window main-window))
   (format t "Bye!~%")
   (call-next-method))
 
-(defmethod keyboard-event ((window colors-window) state ts repeat-p keysym)
+(defmethod keyboard-event ((window main-window) state ts repeat-p keysym)
   (let ((scancode (sdl2:scancode keysym)))
     (case scancode
       (:scancode-escape (close-window window))
       (:scancode-q (close-window window)))))
 
-(defmethod mousebutton-event ((window colors-window) state ts b x y)
+(defmethod mousebutton-event ((window main-window) state ts b x y)
   (format t "~A button: ~A at ~A, ~A~%" state b x y))
 
 
 (defparameter *window* nil)
 
+(defparameter *start-time* 0)
+
+(defun time-since-start ()
+  (/ (- (get-internal-real-time) *start-time*) internal-time-units-per-second))
+
 (defun main ()
   (sdl2.kit:start)
-  (setf *window* (make-instance 'colors-window)))
+  (setf *start-time* (get-internal-real-time))
+  (setf *window* (make-instance 'main-window)))

@@ -1,4 +1,4 @@
-(in-package :gl-tutorial.3.cpu-position-offset)
+(in-package :gl-tutorial.colors)
 
 (defclass colors-window (gl-window)
   ((start-time :initform (get-internal-real-time))
@@ -9,17 +9,15 @@
 ;;Data:--------------------------------------------------------------------------
 
 
-(defparameter *vertex-positions-contents* '(+0.25 +0.25 0.0 1.0
-                                            +0.25 -0.25 0.0 1.0
-                                            -0.25 -0.25 0.0 1.0))
+(defparameter *vertex-positions-contents* '(+0.75 +0.75 0.0 1.0
+                                            +0.75 -0.75 0.0 1.0
+                                            -0.75 -0.75 0.0 1.0))
 
-(defun make-c-vertices (vertices)
+(defparameter *vertex-positions*
   (cffi:foreign-alloc
    :float
    :initial-contents
-   vertices))
-
-(defparameter *vertex-positions* (make-c-vertices *vertex-positions-contents*))
+   *vertex-positions-contents*))
 
 ;;Shader------------------------------------------------------------------------
 
@@ -30,15 +28,15 @@
 (defun load-shaders ()
   (defdict shaders (:shader-path
                     (merge-pathnames
-                     #p "03-moving-triangle/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
+                     #p "02/shaders/" (asdf/system:system-source-directory :gl-tutorials)))
     ;; instead of (:file <path>) you may directly provide the shader as a string containing the
     ;; source code
-    (shader standard-v :vertex-shader (:file "standard.vert"))
-    (shader standard-f :fragment-shader (:file "standard.frag"))
+    (shader colors-v :vertex-shader (:file "colors.vert"))
+    (shader colors-f :fragment-shader (:file "colors.frag"))
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
     (program :colors () ;<- UNIFORMS!
-             (:vertex-shader standard-v)
-             (:fragment-shader standard-f)))
+             (:vertex-shader colors-v)
+             (:fragment-shader colors-f)))
   ;; function may only run when a gl-context exists, as its documentation
   ;; mentions
   (compile-shader-dictionary 'shaders))
@@ -63,22 +61,11 @@
 
 (defvar *position-buffer-object*)
 
-(defun num-of-vertices ()
-  (* 4 (length *vertex-positions-contents*)))
-
 (defun initialize-vertex-buffer ()
   (setf *position-buffer-object* (gl:gen-buffer))
   (gl:bind-buffer :array-buffer *position-buffer-object*)
-  (%gl:buffer-data :array-buffer (num-of-vertices) *vertex-positions* :stream-draw)
+  (%gl:buffer-data :array-buffer (* 4 (length *vertex-positions-contents*)) *vertex-positions* :static-draw)
   (gl:bind-buffer :array-buffer 0))
-
-(defun compute-offset ()
-  (let* ((loop-duration 5)
-         (scale (/ (* 2 pi)
-                   loop-duration))
-         (curr-time-through-loop (rem (time-since-start) loop-duration)))
-    (values (coerce (* (cos (* curr-time-through-loop scale)) 0.5) 'single-float)
-            (coerce (* (sin (* curr-time-through-loop scale)) 0.5) 'single-float))))
 
 ;;utils-------------------------------------------------------------------------
 
@@ -131,9 +118,9 @@
 ;;Rendering----------------------------------------------------------------------
 
 (defmethod render ((window colors-window))
-  (multiple-value-bind (x-offset y-offset) (compute-offset)
-    (adjust-vertex-data x-offset y-offset))
-
+  ;; Your GL context is automatically active.  FLUSH and
+  ;; SDL2:GL-SWAP-WINDOW are done implicitly by GL-WINDOW  (!!)
+  ;; after RENDER.
   (gl:clear-color 0 0 0 0)
   (gl:clear :color-buffer-bit)
 
@@ -169,12 +156,6 @@
 
 (defparameter *window* nil)
 
-(defparameter *start-time* 0)
-
-(defun time-since-start ()
-  (/ (- (get-internal-real-time) *start-time*) internal-time-units-per-second))
-
 (defun main ()
   (sdl2.kit:start)
-  (setf *start-time* (get-internal-real-time))
   (setf *window* (make-instance 'colors-window)))
