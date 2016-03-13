@@ -20,4 +20,5 @@
    (:file "04/ortho-cube")
    (:file "04/shader-perspective")
    (:file "04/matrix-perspective")
-   (:file "05/overlap-no-depth")))
+   (:file "05/overlap-no-depth")
+   (:file "05/base-vertex-overlap")))
