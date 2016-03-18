@@ -54,3 +54,7 @@
 (defpackage+ :gl-tutorial.5.base-vertex-overlap
   (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math #:gl-tutorial.main)
   (:export :main))
+
+(defpackage+ :gl-tutorial.5.depth-buffer
+  (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math #:gl-tutorial.main)
+  (:export :main))
