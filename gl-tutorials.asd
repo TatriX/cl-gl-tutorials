@@ -22,4 +22,5 @@
    (:file "04/matrix-perspective")
    (:file "05/overlap-no-depth")
    (:file "05/base-vertex-overlap")
-   (:file "05/depth-buffer")))
+   (:file "05/depth-buffer")
+   (:file "05/vertex-clipping")))
