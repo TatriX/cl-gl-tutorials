@@ -23,4 +23,6 @@
    (:file "05/overlap-no-depth")
    (:file "05/base-vertex-overlap")
    (:file "05/depth-buffer")
-   (:file "05/vertex-clipping")))
+   (:file "05/vertex-clipping")
+   (:file "05/depth-clamping")
+   (:file "06/translation")))

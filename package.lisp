@@ -6,6 +6,7 @@
   (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math)
   (:export :main
            :main-window
+           :time-since-start
            :uniform
            :*programs-dict*))
 
@@ -61,4 +62,17 @@
 
 (defpackage+ :gl-tutorial.5.vertex-clipping
   (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math #:gl-tutorial.main)
+  (:export :main))
+
+(defpackage+ :gl-tutorial.5.depth-clamping
+  (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math #:gl-tutorial.main)
+  (:export :main))
+
+(defpackage+ :gl-tutorial.6.translation
+  (:use #:cl #:kit.sdl2 #:kit.gl.shader #:kit.math #:gl-tutorial.main)
+  (:import-from #:sb-cga
+                :matrix
+                :zero-matrix
+                :identity-matrix
+                :mref)
   (:export :main))
