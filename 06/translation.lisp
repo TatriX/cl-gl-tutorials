@@ -1,9 +1,9 @@
 (in-package :gl-tutorial.6.translation)
 
 (defun calc-frustum-scale (fov-deg)
-  (/ 1
-     (tan (/ (deg-to-rad fov-deg)
-             2))))
+  (coerce (/ 1
+             (tan (/ (deg-to-rad fov-deg)
+                     2))) 'float))
 
 (defmacro with-matrix (mat &body body)
   `(let ((,mat (zero-matrix))
@@ -20,7 +20,7 @@
   (use-program *programs-dict* :program)
 
   (uniform :mat :camera-to-clip-matrix
-           (let ((frustum-scale 1.0)
+           (let ((frustum-scale (calc-frustum-scale 45))
                  (z-near 1.0)
                  (z-far 45.0))
              (vector
